@@ -24,7 +24,8 @@ class Move {
     }
 
     boolean isValid() {
-        return row != -1 && col != -1;
+        return row >= 0 && row < BOARD_SIZE &&
+               col >= 0 && col < BOARD_SIZE;
     }
 
     boolean isEdge() {

@@ -17,6 +17,10 @@ Then you can run the game with:
 ```
 make run
 ```
+To run the test suite simply execute:
+```
+make runtests
+```
 When you are done, clean it all up with:
 ```
 make clean

@@ -36,14 +36,15 @@ class Board {
     }
 
     boolean isComplete(int row, int col) {
-        boolean isComplete = false;
         for (Orientation or : Orientation.values()) {
-            isComplete |= checkOrientation(or, row, col);
+            if (isOrComplete(or, row, col)) {
+                return true;
+            }
         }
-        return isComplete;
+        return false;
     }
 
-    private boolean checkOrientation(Orientation or, int row, int col) {
+    private boolean isOrComplete(Orientation or, int row, int col) {
         boolean containsX = false;
         boolean containsO = false;
         for (int i = 0; i < size; i++) {

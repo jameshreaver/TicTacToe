@@ -5,8 +5,6 @@ class ComputerPlayer implements Player {
     private Board board;
     private Move currentMove;
     private Move previousMove;
-    private boolean mustCentre;
-    private boolean mustCorner;
     private int turn;
 
     ComputerPlayer(char id, Board board) {
@@ -26,13 +24,15 @@ class ComputerPlayer implements Player {
         Move move = board.getLastMove();
 
         if (!isFirstTurn()) {
-            moveToWin();
-            moveToNotLose();
-        } else if (isFirstTurn()
-                && playingFirst()) {
-            moveToCorner();
-        } else if (mustCentre) {
-            moveToCentre();
+            tryToWin();
+            tryToNotLose();
+        } else if (playingFirst()) {
+            tryToCorner();
+        }
+
+        if (!playingFirst() &&
+                previousMove.isCorner()) {
+            tryToCentre();
         }
 
         if (move.isCorner()) {
@@ -53,40 +53,38 @@ class ComputerPlayer implements Player {
 
     private void opponentToCorner() {
         if (playingFirst()) {
-            moveToCorner();
+            tryToCorner();
         } else {
             if (isFirstTurn()) {
-                moveToCentre();
-            } else if (mustCorner) {
-                moveToCorner();
-                mustCorner = false;
+                tryToCentre();
+            } else if (previousMove.isCorner()) {
+                tryToCorner();
             } else {
-                moveToEdge();
+                tryToEdge();
             }
         }
     }
 
     private void opponentToEdge() {
         if (playingFirst()) {
-            moveToCentre();
+            tryToCentre();
         } else {
             if (isFirstTurn()) {
-                moveToCloseCorner();
-                mustCentre = true;
+                tryToCloseCorner();
             } else {
-                moveToBlockCorner();
+                tryToBlockCorner();
             }
         }
     }
 
     private void opponentToCentre() {
         if (playingFirst()) {
-            moveToOppositeCorner();
+            tryToOppositeCorner();
         } else {
-            moveToCorner();
+            tryToCorner();
         }
     }
-    
+
     private boolean isFirstTurn() {
         return turn == 0;
     }
@@ -95,41 +93,39 @@ class ComputerPlayer implements Player {
         return id == 'X';
     }
 
-    private void moveToWin() {
+    private void tryToWin() {
         if (currentMove.isValid()) return;
         currentMove = winningMoveFor(id, previousMove);
     }
 
-    private void moveToNotLose() {
+    private void tryToNotLose() {
         if (currentMove.isValid()) return;
         char opponent = (id == 'X') ? 'O' : 'X';
         currentMove = winningMoveFor(opponent, board.getLastMove());
     }
 
-    private void moveToCentre() {
+    private void tryToCentre() {
         if (currentMove.isValid()) return;
-        mustCentre = false;
         int centre = size/2;
         if (board.isValid(centre, centre)) {
             currentMove = new Move(centre, centre);
         }
     }
 
-    private void moveToCorner() {
+    private void tryToCorner() {
         if (currentMove.isValid()) return;
         int[] edges = {0, size-1};
         for (int row : edges) {
             for (int col : edges) {
                 if (board.isValid(row, col)) {
                     currentMove = new Move(row, col);
-                    mustCorner = true;
                     return;
                 }
             }
         }
     }
 
-    private void moveToOppositeCorner() {
+    private void tryToOppositeCorner() {
         if (currentMove.isValid()) return;
         int row = size - previousMove.getRow()-1;
         int col = size - previousMove.getCol()-1;
@@ -138,7 +134,7 @@ class ComputerPlayer implements Player {
         }
     }
 
-    private void moveToCloseCorner() {
+    private void tryToCloseCorner() {
         if (currentMove.isValid()) return;
         int row = board.getLastMove().getRow();
         int col = board.getLastMove().getCol();
@@ -157,26 +153,30 @@ class ComputerPlayer implements Player {
         }
     }
 
-    private void moveToBlockCorner() {
+    private void tryToBlockCorner() {
         if (currentMove.isValid()) return;
         int row = board.getLastMove().getRow();
         int col = board.getLastMove().getCol();
         if (row == 0 || row == size-1) {
             if (board.isValid(size-row-1, 0)) {
-                currentMove = new  Move(row, size-1);
-            } else {
-                currentMove = new  Move(row, 0);
+                if (board.isValid(row, size-1)) {
+                    currentMove = new Move(row, size-1);
+                }
+            } else if (board.isValid(row, 0)) {
+                currentMove = new Move(row, 0);
             }
         } else {
             if (board.isValid(0, size-col-1)) {
-                currentMove = new Move(size-1, col);
-            } else {
+                if (board.isValid(size-1, col)) {
+                    currentMove = new Move(size-1, col);
+                }
+            } else if (board.isValid(0, col)) {
                 currentMove = new Move(0, col);
             }
         }
     }
 
-    private void moveToEdge(){
+    private void tryToEdge(){
         if (currentMove.isValid()) return;
         int[] edges = {0, size-1};
         for (int row : edges) {
