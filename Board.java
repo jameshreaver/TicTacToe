@@ -3,41 +3,65 @@ import java.util.Arrays;
 
 class Board {
 
-    private int size;
+    private static final char EMPTY = ' ';
+
+    private int width;
     private char[][] board;
-    private Move lastMove;
 
-    Board(int size) {
-        this.size = size;
-        initialise();
-    }
-
-    void initialise() {
-        this.lastMove = new Move();
-        this.board = new char[size][size];
+    Board(int width) {
+        this.width = width;
+        this.board = new char[getWidth()][getWidth()];
         for (char[] row : board) {
-            Arrays.fill(row, ' ');
+            Arrays.fill(row, EMPTY);
         }
     }
 
-    void mark(int row, int col, char mark) {
-        assert isValid(row, col);
-        board[row][col] = mark;
-        lastMove = new Move(row, col);
+    int getWidth() {
+        return width;
     }
 
-    boolean isValid(int row, int col) {
-        if (row >= 0 && row < size &&
-            col >= 0 && col < size) {
-            return board[row][col] == ' ';
-        } else {
+    char getMarkAt(int row, int col) {
+        return board[row][col];
+    }
+
+    boolean isEmptyAt(int row, int col) {
+        return board[row][col] == EMPTY;
+    }
+
+    boolean isFilled() {
+        return getMarks() == getWidth() * getWidth();
+    }
+
+    void apply(Move move, char mark) {
+        if (isValid(move)) {
+            board[move.getRow()][move.getCol()] = mark;
+        }
+    }
+
+    int getMarks() {
+        int marks = 0;
+        for (int row = 0; row < getWidth(); row++) {
+            for (int col = 0; col < getWidth(); col++) {
+                if (!isEmptyAt(row, col)) marks++;
+            }
+        }
+        return marks;
+    }
+
+    boolean isValid(Move move) {
+        if (move.isNull()) {
             return false;
         }
+        int row = move.getRow();
+        int col = move.getCol();
+        return row >= 0 && row < getWidth() &&
+               col >= 0 && col < getWidth() &&
+               isEmptyAt(row, col);
     }
 
-    boolean isComplete(int row, int col) {
+    boolean isComplete(Move move) {
         for (Orientation or : Orientation.values()) {
-            if (isOrComplete(or, row, col)) {
+            if (isOrComplete(or, move.getRow(), move.getCol())) {
                 return true;
             }
         }
@@ -45,55 +69,31 @@ class Board {
     }
 
     private boolean isOrComplete(Orientation or, int row, int col) {
-        boolean containsX = false;
-        boolean containsO = false;
-        for (int i = 0; i < size; i++) {
-            switch (getChar(row, col, i, or)) {
-                case 'X': containsX = true; break;
-                case 'O': containsO = true; break;
-                default : return false;
+        char mark = getMarkAt(row, col);
+        for (int i = 0; i < getWidth(); i++) {
+            char currentMark = getOrChar(or, row, col, i);
+            if (currentMark == EMPTY || currentMark != mark) {
+                return false;
             }
         }
-        return containsX ^ containsO;
+        return true;
     }
 
-    char getChar(int row, int col, int i, Orientation or) {
+    private char getOrChar(Orientation or, int row, int col, int i) {
         switch (or) {
             case ROW : return board[row][i];
             case COL : return board[i][col];
-            case POS : return board[i][size-i-1];
+            case POS : return board[i][getWidth()-i-1];
             case NEG : return board[i][i];
-            default  : return ' ';
+            default  : return EMPTY;
         }
     }
 
-    Move getLastMove() {
-        return lastMove;
+    private enum Orientation {
+        ROW, // Horizontal
+        COL, // Vertical
+        POS, // Positive Diagonal
+        NEG  // Negative Diagonal
     }
 
-    int getSize() {
-        return size;
-    }
-
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("   ");
-        for (int i = 0; i < size; i++) {
-            sb.append(i+1);
-            sb.append("  ");
-        }
-        sb.append('\n');
-        for (int i = 0; i < size; i++) {
-            sb.append((char)('A'+i));
-            sb.append(' ');
-            for (int j = 0; j < size; j++) {
-                sb.append('[');
-                sb.append(board[i][j]);
-                sb.append(']');
-            }
-            sb.append('\n');
-        }
-        sb.append('\n');
-        return sb.toString();
-    }
 }

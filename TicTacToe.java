@@ -1,22 +1,19 @@
-import java.util.Scanner;
-
-
 public class TicTacToe {
 
-    static final int BOARD_SIZE = 3;
+    private static final int BOARD_WIDTH = 3;
+    private static final char PLAYER1_ID = 'X';
+    private static final char PLAYER2_ID = 'O';
 
-    private int turn;
     private Board board;
-    private Player playerX;
-    private Player playerO;
-    private boolean isGameOver;
-    private boolean isDraw;
+    private Player player1;
+    private Player player2;
+    private UIInterface ui;
 
     TicTacToe() {
-        this.turn = 0;
-        this.board = new Board(BOARD_SIZE);
-        this.playerX = generatePlayer('X');
-        this.playerO = generatePlayer('O');
+        this.ui = new UICommandLine(this);
+        this.board = new Board(BOARD_WIDTH);
+        this.player1 = generatePlayer(PLAYER1_ID);
+        this.player2 = generatePlayer(PLAYER2_ID);
     }
 
     public static void main (String[] args) {
@@ -24,99 +21,61 @@ public class TicTacToe {
         do {
             game.play();
             game.reset();
-        } while (game.playAgain());
+        } while (game.continues());
     }
 
     private void play() {
-        welcome();
-        while (!isGameOver) {
-            display();
-            Player player = getCurrentPlayer();
-            Move move = player.move();
+        ui.startup();
+        Move move = new NullMove();
+        while (!isGameOver(move)) {
+            ui.update();
+            move = getPlayer().move();
             makeMove(move);
-            checkGameOver(move);
-            nextTurn();
         }
-        gameover();
+        ui.gameover();
+    }
+
+    private void reset() {
+        this.board = new Board(BOARD_WIDTH);
+    }
+
+    private boolean continues() {
+        return ui.playAgain();
     }
 
     private void makeMove(Move move) {
-        char id = getCurrentPlayer().getId();
-        board.mark(move.getRow(), move.getCol(), id);
+        board.apply(move, getPlayer().getId());
     }
 
-    private void checkGameOver(Move move) {
-        isGameOver = board.isComplete(move.getRow(), move.getCol());
-        isDraw = !isGameOver && turn == BOARD_SIZE * BOARD_SIZE - 1;
-        if (isDraw) {
-            isGameOver = true;
-        }
-    }
-
-    private Player getCurrentPlayer() {
-        return (turn % 2 == 0) ? playerX : playerO;
-    }
-
-    private void nextTurn() {
-        if (!isGameOver) {
-            turn++;
+    private boolean isGameOver(Move move) {
+        if (move.isNull()) {
+            return false;
+        } else if (board.isComplete(move)) {
+            return true;
+        } else {
+            return board.isFilled();
         }
     }
 
     private Player generatePlayer(char id) {
-        return (isHuman(id)) ? new HumanPlayer(id, board)
-                             : new ComputerPlayer(id, board);
+        return (ui.isHuman(id)) ? new HumanPlayer(id, this)
+                                : new ComputerPlayer(id, this);
     }
 
-    private boolean isHuman(char id) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.format("Who is playing %c? ", id);
-        System.out.println("Enter 'H' for Human or 'C' for Computer:");
-
-        String type = scanner.nextLine().toUpperCase();
-        while (!(type.equals("H") || type.equals("C"))) {
-            System.out.println("Invalid option.");
-            System.out.println("Enter 'H' for Human or 'C' for Computer:");
-            type = scanner.nextLine().toUpperCase();
-        }
-        return type.equals("H");
+    Player getPlayer() {
+        return (board.getMarks() % 2 == 0) ? player1 : player2;
     }
 
-    private boolean playAgain() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Do you want to play again?");
-        System.out.println("Enter 'Y' for Yes or 'N' for No:");
-        String type = scanner.nextLine().toUpperCase();
-        return type.equals("Y");
+    char getOpponentId(char id) {
+        return (id == PLAYER1_ID) ? PLAYER2_ID : PLAYER1_ID;
     }
 
-    private void welcome() {
-        System.out.println("Welcome to Tic Tac Toe!\n");
+    UIInterface getUI() {
+        return ui;
     }
 
-    private void display() {
-        System.out.println(board);
-        System.out.format("Player %c's turn.%n",
-                getCurrentPlayer().getId());
+    Board getBoard() {
+        return board;
     }
 
-    private void gameover() {
-        System.out.println(board);
-        System.out.println("GAME OVER!");
-        if (isDraw) {
-            System.out.format("It's a draw.%n%n");
-        } else {
-            int id = getCurrentPlayer().getId();
-            System.out.format("Player %c wins.%n%n", id);
-        }
-    }
-
-    private void reset() {
-        this.turn = 0;
-        this.board.initialise();
-        this.playerX.reset();
-        this.playerO.reset();
-        this.isGameOver = false;
-        this.isDraw = false;
-    }
 }
