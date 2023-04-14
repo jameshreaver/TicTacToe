@@ -42,6 +42,6 @@ make clean
 
 
 ##
-This program was developed by Giacomo Guerci in January 2017 at Imperial
+This program was developed by James Reaver in January 2017 at Imperial
 College London. The code is provided without a licence and all the rights are
 reserved.
